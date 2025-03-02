@@ -41,7 +41,14 @@ async function analyzeCode(apiKey, fileName, fileContent) {
         fileExt === "js" ||
         fileExt === "tsx" ||
         fileExt === "jsx"
-          ? `5. 코드 최적화: 성능 개선 가능 부분과 리팩토링 제안사항`
+          ? `5. 코드 최적화 및 리팩토링 제안: 
+             - 성능 개선: 성능을 향상시킬 수 있는 구체적인 부분과 개선 방법
+             - 코드 가독성: 가독성을 높일 수 있는 구조적 개선 사항
+             - 유지보수성: 더 유지보수하기 쉽게 만들기 위한 구체적인 리팩토링 제안
+             - 모범 사례: 해당 언어/프레임워크의 최신 모범 사례를 적용한 개선 방안
+             - 잠재적 버그: 발견된 잠재적 버그나 에러 가능성이 있는 부분과 해결 방법
+             
+             각 제안에는 구체적인 코드 위치와 개선된 코드 예시를 포함해주세요.`
           : ""
       }
       6. 학습 퀴즈: 이 코드와 관련된 5개의 퀴즈 문제로, 다음 유형을 각각 포함해야 합니다:
@@ -63,7 +70,23 @@ async function analyzeCode(apiKey, fileName, fileContent) {
           fileExt === "js" ||
           fileExt === "tsx" ||
           fileExt === "jsx"
-            ? `"optimizationTips": ["최적화 팁1", "최적화 팁2", ...],`
+            ? `"codeOptimizations": {
+                "performanceImprovements": [
+                  {"issue": "문제 설명", "location": "코드 위치", "suggestion": "개선된 코드 예시", "explanation": "이유 설명"}
+                ],
+                "readabilityImprovements": [
+                  {"issue": "문제 설명", "location": "코드 위치", "suggestion": "개선된 코드 예시", "explanation": "이유 설명"}
+                ],
+                "maintainabilityImprovements": [
+                  {"issue": "문제 설명", "location": "코드 위치", "suggestion": "개선된 코드 예시", "explanation": "이유 설명"}
+                ],
+                "bestPractices": [
+                  {"issue": "문제 설명", "location": "코드 위치", "suggestion": "개선된 코드 예시", "explanation": "이유 설명"}
+                ],
+                "potentialBugs": [
+                  {"issue": "문제 설명", "location": "코드 위치", "suggestion": "개선된 코드 예시", "explanation": "이유 설명"}
+                ]
+              },`
             : ""
         }
         "quizzes": [
@@ -91,6 +114,7 @@ async function analyzeCode(apiKey, fileName, fileContent) {
         ]
       }`;
     } else {
+      // 마크다운 문서용 프롬프트는 그대로 유지
       systemPrompt = `당신은 개발자 학습을 도와주는 AI 튜터입니다. 
       주어진 마크다운/텍스트 파일을 분석하여 다음 항목을 포함한 학습 노트를 생성해주세요:
       
@@ -170,16 +194,23 @@ async function analyzeCode(apiKey, fileName, fileContent) {
     // 결과 처리 및 반환
     const result = JSON.parse(response.data.choices[0].message.content);
 
-    // optimizationTips 속성이 없을 경우 빈 배열 추가 (JS/TS 파일인 경우에만)
+    // JS/TS 파일인 경우에만 코드 최적화 필드가 없을 때 기본 구조 추가
     if (
       fileType === "code" &&
       (fileExt === "ts" ||
         fileExt === "js" ||
         fileExt === "tsx" ||
-        fileExt === "jsx") &&
-      !result.optimizationTips
+        fileExt === "jsx")
     ) {
-      result.optimizationTips = [];
+      if (!result.codeOptimizations) {
+        result.codeOptimizations = {
+          performanceImprovements: [],
+          readabilityImprovements: [],
+          maintainabilityImprovements: [],
+          bestPractices: [],
+          potentialBugs: [],
+        };
+      }
     }
 
     return result;
