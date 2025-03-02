@@ -1,4 +1,3 @@
-// openai-service.js
 const axios = require("axios");
 
 /**
@@ -22,6 +21,7 @@ function getFileType(fileName) {
  */
 async function analyzeCode(apiKey, fileName, fileContent) {
   const fileType = getFileType(fileName);
+  const fileExt = getFileExtension(fileName);
   const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
   try {
@@ -36,7 +36,15 @@ async function analyzeCode(apiKey, fileName, fileContent) {
       2. 주요 학습 포인트: 이 코드에서 배울 수 있는 중요 개념과 패턴(각 항목은 구체적이고 실용적이어야 함)
       3. 기술 스택: 사용된 주요 라이브러리, 프레임워크, 패턴
       4. 코드 설명: 주요 코드 블록에 대한 상세한 설명(핵심 함수와 로직 위주)
-      5. 학습 퀴즈: 이 코드와 관련된 5개의 퀴즈 문제로, 다음 유형을 각각 포함해야 합니다:
+      ${
+        fileExt === "ts" ||
+        fileExt === "js" ||
+        fileExt === "tsx" ||
+        fileExt === "jsx"
+          ? `5. 코드 최적화: 성능 개선 가능 부분과 리팩토링 제안사항`
+          : ""
+      }
+      6. 학습 퀴즈: 이 코드와 관련된 5개의 퀴즈 문제로, 다음 유형을 각각 포함해야 합니다:
          - 3개의 객관식 문제: 각 문제는 4개의 보기와 정답 번호(0-3), 그리고 해설을 포함
          - 1개의 단답형 문제: 정확한 답변과 해설, 그리고 허용 가능한 답변 목록을 포함
          - 1개의 서술형 문제: 모범 답안과 평가에 사용될 핵심 포인트를 포함
@@ -50,6 +58,14 @@ async function analyzeCode(apiKey, fileName, fileContent) {
         "learningPoints": ["학습 포인트1", "학습 포인트2", ...],
         "techStack": ["기술1", "기술2", ...],
         "codeExplanation": "코드 설명 텍스트",
+        ${
+          fileExt === "ts" ||
+          fileExt === "js" ||
+          fileExt === "tsx" ||
+          fileExt === "jsx"
+            ? `"optimizationTips": ["최적화 팁1", "최적화 팁2", ...],`
+            : ""
+        }
         "quizzes": [
           {
             "type": "multipleChoice",
@@ -127,7 +143,7 @@ async function analyzeCode(apiKey, fileName, fileContent) {
     const response = await axios.post(
       OPENAI_API_URL,
       {
-        model: "gpt-4o", // 또는 사용 가능한 최신 모델
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -138,7 +154,7 @@ async function analyzeCode(apiKey, fileName, fileContent) {
             content: `파일명: ${fileName}\n\n파일 내용:\n${fileContent}`,
           },
         ],
-        temperature: 0.7, // 더 다양한 퀴즈를 위해 온도 약간 높임
+        temperature: 0.7,
         max_tokens: 4000,
         response_format: { type: "json_object" },
       },
@@ -147,11 +163,26 @@ async function analyzeCode(apiKey, fileName, fileContent) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
-        timeout: 50000, // 50초 타임아웃 설정
+        timeout: 50000,
       }
     );
 
-    return JSON.parse(response.data.choices[0].message.content);
+    // 결과 처리 및 반환
+    const result = JSON.parse(response.data.choices[0].message.content);
+
+    // optimizationTips 속성이 없을 경우 빈 배열 추가 (JS/TS 파일인 경우에만)
+    if (
+      fileType === "code" &&
+      (fileExt === "ts" ||
+        fileExt === "js" ||
+        fileExt === "tsx" ||
+        fileExt === "jsx") &&
+      !result.optimizationTips
+    ) {
+      result.optimizationTips = [];
+    }
+
+    return result;
   } catch (error) {
     console.error("OpenAI API 오류:", error.response?.data || error.message);
     throw new Error("파일 분석 중 오류가 발생했습니다.");

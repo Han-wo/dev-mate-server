@@ -13,7 +13,7 @@ app.use(
     origin:
       process.env.NODE_ENV === "production"
         ? ["https://dev-study-mate.vercel.app"] // 프로덕션 환경에서의 클라이언트 URL
-        : "http://localhost:3001",
+        : "http://localhost:3000",
     // 개발 환경에서의 클라이언트 URL
     credentials: true,
   })
