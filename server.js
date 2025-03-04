@@ -5,7 +5,6 @@ const { analyzeCode } = require("./openai-service");
 const bodyParser = require("body-parser");
 
 const noteService = require("./note-service");
-const { firestore, admin } = require("./firebase-admin-config");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
