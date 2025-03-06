@@ -1,4 +1,4 @@
-const { firestore } = require("./firebase-admin-config");
+const { admin, firestore } = require("./firebase-admin-config");
 const { FieldValue } = require("firebase-admin/firestore");
 
 const NOTES_COLLECTION = "studyNotes";
@@ -8,18 +8,20 @@ const NOTES_COLLECTION = "studyNotes";
  */
 async function createNote(note) {
   try {
+    console.log("노트 저장 시도:", JSON.stringify(note));
+
     // 직렬화 가능한 형태로 데이터 정리
     const cleanedNote = JSON.parse(JSON.stringify(note));
 
     const docRef = await firestore.collection(NOTES_COLLECTION).add({
       ...cleanedNote,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+
     return docRef.id;
   } catch (error) {
-    console.error("노트 생성 중 오류:", error);
-    throw new Error("노트 생성 중 오류가 발생했습니다.");
+    throw new Error(`노트 생성 중 오류가 발생했습니다: ${error.message}`);
   }
 }
 

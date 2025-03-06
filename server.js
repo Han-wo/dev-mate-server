@@ -6,6 +6,8 @@ const bodyParser = require("body-parser");
 
 const noteService = require("./note-service");
 
+const statsService = require("./stats-service");
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -159,6 +161,79 @@ app.post("/api/analyze", async (req, res) => {
     }
 
     return res.status(500).json({ error: "파일 분석 중 오류가 발생했습니다." });
+  }
+});
+
+// 파일 분석 기록 API
+app.post("/api/stats/file-analysis", async (req, res) => {
+  try {
+    const { userId, fileName, fileType, repoName } = req.body;
+
+    if (!userId || !fileName) {
+      return res
+        .status(400)
+        .json({ error: "사용자 ID와 파일 이름은 필수입니다." });
+    }
+
+    const recordId = await statsService.recordFileAnalysis(userId, {
+      fileName,
+      fileType: fileType || "code",
+      repoName: repoName || "",
+    });
+
+    return res.status(201).json({ id: recordId });
+  } catch (error) {
+    console.error("파일 분석 기록 API 오류:", error);
+    return res
+      .status(500)
+      .json({ error: "파일 분석 기록을 저장하는 중 오류가 발생했습니다." });
+  }
+});
+
+app.post("/api/stats/quiz-completion", async (req, res) => {
+  try {
+    const { userId, noteId, score, totalQuestions } = req.body;
+
+    if (
+      !userId ||
+      !noteId ||
+      score === undefined ||
+      totalQuestions === undefined
+    ) {
+      return res.status(400).json({ error: "필수 필드가 누락되었습니다." });
+    }
+
+    const recordId = await statsService.recordQuizCompletion(userId, {
+      noteId,
+      score,
+      totalQuestions,
+    });
+
+    return res.status(201).json({ id: recordId });
+  } catch (error) {
+    console.error("퀴즈 완료 기록 API 오류:", error);
+    return res
+      .status(500)
+      .json({ error: "퀴즈 완료 기록을 저장하는 중 오류가 발생했습니다." });
+  }
+});
+
+// 사용자 통계 정보 API
+app.get("/api/stats", async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    if (!userId) {
+      return res.status(400).json({ error: "사용자 ID가 필요합니다." });
+    }
+
+    const stats = await statsService.getUserStats(userId);
+    return res.json({ stats });
+  } catch (error) {
+    console.error("통계 정보 API 오류:", error);
+    return res
+      .status(500)
+      .json({ error: "통계 정보를 가져오는 중 오류가 발생했습니다." });
   }
 });
 
