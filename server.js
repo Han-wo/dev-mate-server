@@ -30,7 +30,6 @@ app.get("/health", (req, res) => {
 });
 
 // 노트 API 엔드포인트
-// 노트 생성 API
 app.post("/api/note", async (req, res) => {
   try {
     const data = req.body;
@@ -47,7 +46,7 @@ app.post("/api/note", async (req, res) => {
   }
 });
 
-// 노트 목록 조회 API
+// 노트 목록 조회 API - 변경 없음
 app.get("/api/note", async (req, res) => {
   try {
     const userId = req.query.userId;
@@ -66,11 +65,17 @@ app.get("/api/note", async (req, res) => {
   }
 });
 
-// 노트 상세 조회 API
+// 노트 상세 조회 API - userId 파라미터 추가
 app.get("/api/note/:id", async (req, res) => {
   try {
     const noteId = req.params.id;
-    const note = await noteService.getNoteById(noteId);
+    const userId = req.query.userId; // 쿼리 파라미터에서 userId 가져오기
+
+    if (!userId) {
+      return res.status(400).json({ error: "사용자 ID가 필요합니다." });
+    }
+
+    const note = await noteService.getNoteById(userId, noteId);
 
     if (!note) {
       return res.status(404).json({ error: "노트를 찾을 수 없습니다." });
@@ -85,13 +90,18 @@ app.get("/api/note/:id", async (req, res) => {
   }
 });
 
-// 노트 업데이트 API
+// 노트 업데이트 API - userId 파라미터 추가
 app.put("/api/note/:id", async (req, res) => {
   try {
     const noteId = req.params.id;
     const noteData = req.body;
+    const userId = noteData.userId; // 요청 본문에서 userId 가져오기
 
-    await noteService.updateNote(noteId, noteData);
+    if (!userId) {
+      return res.status(400).json({ error: "사용자 ID가 필요합니다." });
+    }
+
+    await noteService.updateNote(userId, noteId, noteData);
     return res.json({ success: true });
   } catch (error) {
     console.error("노트 업데이트 API 오류:", error);
@@ -101,11 +111,17 @@ app.put("/api/note/:id", async (req, res) => {
   }
 });
 
-// 노트 삭제 API
+// 노트 삭제 API - userId 파라미터 추가
 app.delete("/api/note/:id", async (req, res) => {
   try {
     const noteId = req.params.id;
-    await noteService.deleteNote(noteId);
+    const userId = req.query.userId; // 쿼리 파라미터에서 userId 가져오기
+
+    if (!userId) {
+      return res.status(400).json({ error: "사용자 ID가 필요합니다." });
+    }
+
+    await noteService.deleteNote(userId, noteId);
     return res.json({ success: true });
   } catch (error) {
     console.error("노트 삭제 API 오류:", error);
